@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+</head>
+<body>
+
+<script>
+/*
+  creates an Audio instance to play a specfic sound clip
+*/
+  function createAudioNode(src, options={}) {
+    var audio = document.createElement('audio');
+    audio.volume = options.volume || 0.5;
+    audio.loop = options.loop;
+    audio.src = src;
+    return audio;
+  }
+
+/*
+  pass in an Array of strings corresponding to the sound file names
+  pass in a String of the base url pointing to the folder where sound files are placed
+  pass in a String indicating sound file extension; default to mp3
+*/
+  function loadSounds(names) {
+    return names.reduce((module, effectName) => {
+      const src = `sounds/${effectName}.wav`;
+      module['_' + effectName] = createAudioNode(src);
+
+      // override the getter for this prop; have it return the context-bound play function of the audio node
+      // Note: using this way to define the props seems to make them ennumerable...
+      // check out the buttons that get created; the "_effect" prop is ennumerated but not the "effect" prop!
+      Object.defineProperty(module, effectName, {
+        get: function() {
+          var effectNode = module['_' + effectName];
+          return effectNode.play.bind(effectNode);
+        },
+        set: function(thing) {
+          console.log('Sorry. Property modification disallowed. Here is your thing back: ', thing);
+        }
+      });
+
+      return module;
+    }, {});
+  }
+
+    var effects = ['correct', 'wrong', 'complete', 'finishCard'];
+    var audioNodes = loadSounds(effects);
+
+    Object.keys(audioNodes).forEach(function (effectName) {
+      var btn = document.createElement('button');
+      btn.innerHTML = effectName;
+      btn.onclick = function() {
+        audioNodes[effectName].play();
+        console.log('playing ' + effectName);
+      };
+      document.getElementsByTagName('body')[0].appendChild(btn);
+    });
+
+    console.log(audioNodes);
+
+    var btn = document.createElement('button');
+    btn.innerHTML = 'play correct';
+    btn.onclick = function() {
+      console.log('using getter to play!?', audioNodes.correct);
+      // can invoke the sound effect by name directly as shortcut for invoking play function
+      audioNodes.correct();
+    };
+    document.getElementsByTagName('body')[0].appendChild(btn);
+
+  </script>
+</body>
+</html>
